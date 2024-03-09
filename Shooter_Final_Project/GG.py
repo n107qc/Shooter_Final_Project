@@ -9,6 +9,9 @@ init()
 font.init()
 mixer.init()
 
+lost = 0
+score = 0
+
 # розміри вікна
 WIDTH, HEIGHT = 900, 600
 
@@ -31,6 +34,16 @@ mixer.music.play(loops=-1)
 #окремі звуки
 fire_sound = mixer.Sound("Sound/lmg_fire01.mp3")
 fire_sound.set_volume(0.2)
+
+font.init()
+f = font.SysFont('Arial', 36)
+f2 = font.SysFont('Arial', 80)
+
+txt_lose_game = f2.render('Програв',True,(255,0,0))
+txt_win_game = f2.render('Вигрвав',True,(0,255,0))
+
+ammo = 5
+reload = False
 
 class GameSprite(sprite.Sprite):
     def __init__(self, sprite_img, width, height, x, y, speed = 3):
@@ -81,7 +94,7 @@ class Enemy(GameSprite):
     def __init__(self, sprite_img, width, height, x, y, speed=3):
         super().__init__(sprite_img, width, height, x, y, speed)
         self.direction = 'down'  
-
+        global lost
     def update(self):
         if self.direction == 'down':
             self.rect.y += self.speed
@@ -92,7 +105,8 @@ class Enemy(GameSprite):
             self.rect.y -= self.speed
             if self.rect.top <= 0:  
                 self.rect.y = 0  
-                self.direction = 'down'  
+                self.direction = 'down'
+                lost = lost + 1  
 
 class Bullet(GameSprite):
     def update(self):
@@ -169,6 +183,21 @@ FPS = 60
 
 # ігровий цикл
 while run:
+
+
+    for e in event.get():
+        if e.type == QUIT:
+            game = False
+
+        if e.type == KEYDOWN:
+            if e.key == K_SPACE:
+                if ammo>0 and reload == False:
+                    player.fire()
+                    ammo-=1
+                
+                if ammo <= 0 and reload == False:
+                    reload = True
+                    start_reload = timer()
     # перевірка подій
     for e in event.get():
         if e.type == QUIT:
@@ -176,8 +205,13 @@ while run:
         if not finish and e.type == KEYDOWN and e.key == K_SPACE:
             player.fire()
 
-    if not finish: # поки гра триває
-        # рух спрайтів
+    if not finish:
+        window.blit(window, (0, 0))
+        txt_lose = f.render(f'Пропущено:{lost}',True,(255,255,255))
+        txt_score = f.render(f'Рахунок:{score}',True,(255,255,255))
+        window.blit(txt_lose, (0,50))
+        window.blit(txt_score, (0,0))
+
         player.update() #рух гравця
 
         #зіткнення гравця і ворогів
@@ -186,6 +220,47 @@ while run:
             finish = True
             result_text.set_text("ПРОГРАШ!")
 
+        if reload:
+            now_time = timer()
+
+
+            delta = now_time - start_reload
+            if delta < 3:
+                txt_reload = f.render('WAIT',True,[150,0,0])
+                window.blit(txt_reload, [200, 400])
+            else:
+                ammo = 5
+                reload = False
+
+
+        if score == 1:
+            finish = True
+            window.blit(txt_win_game,(200,200))
+
+        if sprite.spritecollide(player, enemies,False):
+            finish = True
+            window.blit(txt_lose_game,(200,200))
+
+        collide = sprite.groupcollide(enemies, bullets,True,True)
+        for c in  collide:
+            score = score + 1
+            en = Enemy('ufo.png', randint(0, WIDTH-100),0,100,0,0)
+            enemies.add(en)
+    else:
+        ammo = 5
+        score = 0
+        lost = 0
+        finish = False
+
+        for m in enemies:
+            m.kill()
+
+
+
+        for m in bullets:
+            m.kill()
+
+        
         #відрисовуємо фон
         window.blit(bg, (0, 0)) 
         #відрисовуємо спрайти
