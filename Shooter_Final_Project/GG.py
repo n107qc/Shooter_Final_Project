@@ -1,11 +1,11 @@
 from pygame import *
 from pygame.sprite import Sprite
-from pygame.transform import scale, flip
+from pygame.transform import scale, rotate
 from pygame.image import load
 from random import randint
 from time import time as timer
+from math import atan2, degrees
 
-init()
 font.init()
 mixer.init()
 
@@ -82,7 +82,11 @@ class Player(GameSprite):
         
         for w in walls:
             if sprite.collide_mask(self, w):
-                self.rect.x, self.rect.y = old_pos      
+                self.rect.x, self.rect.y = old_pos 
+
+        for e in enemies:
+            if sprite.collide_mask(self,w):
+                self.rect.x, self.rect.y = old_pos
 
     def fire(self):
         bullet = Bullet(ammo1_img, 15, 20, self.rect.right, self.rect.centery,  10)  
@@ -94,8 +98,8 @@ class Enemy(GameSprite):
     def __init__(self, sprite_img, width, height, x, y, speed=3):
         super().__init__(sprite_img, width, height, x, y, speed)
         self.direction = 'down'  
-        global lost
-    def update(self):
+
+    def update(self, lost):  # Додали аргумент lost
         if self.direction == 'down':
             self.rect.y += self.speed
             if self.rect.bottom >= HEIGHT:  
@@ -127,6 +131,7 @@ class Wall(sprite.Sprite):
  
 
 
+
 class Text(GameSprite):
     def __init__(self, text, x, y, font_size=22, font_name="Impact", color=(255,255,255)):
         self.font = font.SysFont(font_name, font_size)
@@ -136,11 +141,12 @@ class Text(GameSprite):
         self.rect.y = y
         self.color = color
         
-    def draw(self): #відрисовуємо спрайт у вікні
-        window.blit(self.image, self.rect)
+    def draw(self, surface): #відрисовуємо спрайт у вікні
+        surface.blit(self.image, self.rect)
     
     def set_text(self, new_text): #змінюємо текст напису
         self.image = self.font.render(new_text, True, self.color)
+
 
 # створення вікна
 window = display.set_mode((WIDTH, HEIGHT))
@@ -156,8 +162,8 @@ bg = transform.scale(bg, (WIDTH, HEIGHT))
 
 # створення спрайтів
 player = Player(player_img, width=300, height=200, x=0, y=415)
-enemy1 = Enemy(enemy1_img, width=239, height=211, x=450, y=225)
-enemy2 = Enemy(enemy2_img, width=200, height=189, x=670, y=15)
+enemy1 = Enemy(enemy1_img, width=200, height=189, x=450, y=225)
+enemy2 = Enemy(enemy2_img, width=180, height=160, x=670, y=15)
 
 enemies = sprite.Group()
 enemies.add(enemy1)
@@ -183,96 +189,82 @@ FPS = 60
 
 # ігровий цикл
 while run:
-
-
-    for e in event.get():
-        if e.type == QUIT:
-            game = False
-
-        if e.type == KEYDOWN:
-            if e.key == K_SPACE:
-                if ammo>0 and reload == False:
-                    player.fire()
-                    ammo-=1
-                
-                if ammo <= 0 and reload == False:
-                    reload = True
-                    start_reload = timer()
     # перевірка подій
     for e in event.get():
         if e.type == QUIT:
             run = False
-        if not finish and e.type == KEYDOWN and e.key == K_SPACE:
-            player.fire()
+        elif e.type == KEYDOWN:
+            if e.key == K_SPACE:
+                if ammo > 0 and not reload:
+                    player.fire()
+                    ammo -= 1
+                elif ammo <= 0 and not reload:
+                    reload = True
+                    start_reload = timer()
 
     if not finish:
-        window.blit(window, (0, 0))
-        txt_lose = f.render(f'Пропущено:{lost}',True,(255,255,255))
-        txt_score = f.render(f'Рахунок:{score}',True,(255,255,255))
+        window.blit(bg, (0, 0))
+        txt_lose = f.render(f'Пропущено:{lost}', True, (255,255,255))
+        txt_score = f.render(f'Рахунок:{score}', True, (255,255,255))
         window.blit(txt_lose, (0,50))
         window.blit(txt_score, (0,0))
 
-        player.update() #рух гравця
+        # Отримання позиції курсора миші
+        mouse_pos = mouse.get_pos()
 
+        # Обчислення вектору від гравця до курсора миші
+        dx = mouse_pos[0] - player.rect.centerx
+        dy = mouse_pos[1] - player.rect.centery
+
+        # Обчислення кута між гравцем і курсором миші (в радіанах)
+        angle = atan2(dy, dx)
+
+        # Обертання зображення зброї гравця на кут від гравця до курсора миші
+        rotated_arm = rotate(player.arm, degrees(-angle))
+
+        # Оновлення положення зброї гравця
+        arm_rect = rotated_arm.get_rect(center=player.rect.center)
+        
+        # Оновлення позиції зображення гравця та зброї
+        player.rect.topleft = (player.rect.topleft)
+        window.blit(player.image, player.rect)
+        window.blit(rotated_arm, arm_rect.topleft)
+
+        player.update() #рух гравця
+    
         #зіткнення гравця і ворогів
-        spritelist = sprite.spritecollide(player, enemies, False,sprite.collide_mask)
-        for collide in spritelist:
-            finish = True
-            result_text.set_text("ПРОГРАШ!")
+        ...
 
         if reload:
             now_time = timer()
-
-
             delta = now_time - start_reload
             if delta < 3:
-                txt_reload = f.render('WAIT',True,[150,0,0])
+                txt_reload = f.render('WAIT', True, [150,0,0])
                 window.blit(txt_reload, [200, 400])
             else:
                 ammo = 5
                 reload = False
 
 
-        if score == 1:
-            finish = True
-            window.blit(txt_win_game,(200,200))
-
-        if sprite.spritecollide(player, enemies,False):
-            finish = True
-            window.blit(txt_lose_game,(200,200))
-
-        collide = sprite.groupcollide(enemies, bullets,True,True)
-        for c in  collide:
-            score = score + 1
-            en = Enemy('ufo.png', randint(0, WIDTH-100),0,100,0,0)
-            enemies.add(en)
-    else:
-        ammo = 5
-        score = 0
-        lost = 0
-        finish = False
-
-        for m in enemies:
-            m.kill()
 
 
-
-        for m in bullets:
-            m.kill()
 
         
-        #відрисовуємо фон
-        window.blit(bg, (0, 0)) 
         #відрисовуємо спрайти
-        player.draw(window) 
+        #player.draw(window) 
         enemies.draw(window)
         walls.draw(window)
         bullets.draw(window)
-        enemies.update()
+        enemies.update(lost)
         walls.update()
         bullets.update()
-    else:
-        result_text.draw() 
+        enemy1.update(lost)
+        enemy2.update(lost)
+    if score == 1:
+        finish = True
+        window.blit(txt_win_game, (200,200))
+    if finish:
+        result_text.draw(window) 
 
     display.update()
     clock.tick(FPS)
