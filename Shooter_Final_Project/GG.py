@@ -66,7 +66,13 @@ class Player(GameSprite):
 
     def draw(self, surface):
         super().draw(surface)
-        surface.blit(self.arm, (self.rect.centerx, self.rect.centery))
+        # Отримати розміри гравця
+        player_width, player_height = self.rect.size
+        # Розмістити зброю в центрі правої частини гравця
+        arm_pos = (self.rect.right, self.rect.centery - self.arm.get_height() // 2)
+        # Оновити позицію зображення зброї
+        surface.blit(self.arm, arm_pos)
+
 
     def update(self): #рух спрайту
         old_pos = self.rect.x, self.rect.y
@@ -89,8 +95,11 @@ class Player(GameSprite):
                 self.rect.x, self.rect.y = old_pos
 
     def fire(self):
-        bullet = Bullet(ammo1_img, 15, 20, self.rect.right, self.rect.centery,  10)  
-        bullets.add(bullet) 
+        # Отримати позицію зброї відносно гравця
+        bullet_x = self.rect.right
+        bullet_y = self.rect.centery
+        bullet = Bullet(ammo1_img, 15, 20, bullet_x, bullet_y,  10)  
+        bullets.add(bullet)   
     
      
 
@@ -174,7 +183,7 @@ bullets = sprite.Group()
 
 walls = sprite.Group()
 wall1 = Wall(250, 300, 20, 550)
-wall2 = Wall(430, 130, 20, 350)
+wall2 = Wall(430, 100, 20, 350)
 wall3 = Wall(680, 450, 20, 180)
 
 walls.add(wall1)
@@ -189,7 +198,6 @@ FPS = 60
 
 # ігровий цикл
 while run:
-    # перевірка подій
     for e in event.get():
         if e.type == QUIT:
             run = False
@@ -239,8 +247,8 @@ while run:
             now_time = timer()
             delta = now_time - start_reload
             if delta < 3:
-                txt_reload = f.render('WAIT', True, [150,0,0])
-                window.blit(txt_reload, [200, 400])
+                txt_reload = f.render('WAIT', True, [150,150,200])
+                window.blit(txt_reload, [150, 0])
             else:
                 ammo = 5
                 reload = False
