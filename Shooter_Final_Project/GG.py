@@ -4,7 +4,7 @@ from pygame.transform import scale, rotate
 from pygame.image import load
 from random import randint
 from time import time as timer
-from math import atan2, degrees
+from math import atan2, degrees, hypot
 
 font.init()
 mixer.init()
@@ -90,15 +90,15 @@ class Player(GameSprite):
             if sprite.collide_mask(self, w):
                 self.rect.x, self.rect.y = old_pos 
 
-        for e in enemies:
+        for w in enemies:
             if sprite.collide_mask(self,w):
                 self.rect.x, self.rect.y = old_pos
 
     def fire(self):
         # Отримати позицію зброї відносно гравця
-        bullet_x = self.rect.right
-        bullet_y = self.rect.centery
-        bullet = Bullet(ammo1_img, 15, 20, bullet_x, bullet_y,  10)  
+        bullet_x = arm_rect.centerx
+        bullet_y = arm_rect.centery
+        bullet = Bullet(ammo1_img, 15, 20, bullet_x, bullet_y,  10, player.angle, player.dir)  
         bullets.add(bullet)   
     
      
@@ -106,7 +106,8 @@ class Player(GameSprite):
 class Enemy(GameSprite):
     def __init__(self, sprite_img, width, height, x, y, speed=3):
         super().__init__(sprite_img, width, height, x, y, speed)
-        self.direction = 'down'  
+        self.direction = 'down'
+       
 
     def update(self, lost):  # Додали аргумент lost
         if self.direction == 'down':
@@ -122,8 +123,15 @@ class Enemy(GameSprite):
                 lost = lost + 1  
 
 class Bullet(GameSprite):
+    def __init__(self, sprite_img, width, height, x, y, speed=3, angle=0, dir = (1,0)):
+        super().__init__(sprite_img, width, height, x, y, speed)
+
+        self.angle = angle
+        self.dir = dir
+
     def update(self):
-        self.rect.x += self.speed  
+        self.rect.x += self.dir[0] * self.speed  
+        self.rect.y += self.dir[1] * self.speed  
         if self.rect.x > WIDTH:  
             self.kill()
 
@@ -217,31 +225,24 @@ while run:
         window.blit(txt_lose, (0,50))
         window.blit(txt_score, (0,0))
 
-        # Отримання позиції курсора миші
         mouse_pos = mouse.get_pos()
 
-        # Обчислення вектору від гравця до курсора миші
         dx = mouse_pos[0] - player.rect.centerx
         dy = mouse_pos[1] - player.rect.centery
 
-        # Обчислення кута між гравцем і курсором миші (в радіанах)
-        angle = atan2(dy, dx)
+        player.angle = atan2(dy, dx)
+        player.dir = (dx,dy)
+        length = hypot(*player.dir)
+        player.dir = (dx/length, dy/length)
 
-        # Обертання зображення зброї гравця на кут від гравця до курсора миші
-        rotated_arm = rotate(player.arm, degrees(-angle))
-
-        # Оновлення положення зброї гравця
+        rotated_arm = rotate(player.arm, degrees(-player.angle))
         arm_rect = rotated_arm.get_rect(center=player.rect.center)
-        
-        # Оновлення позиції зображення гравця та зброї
+
         player.rect.topleft = (player.rect.topleft)
         window.blit(player.image, player.rect)
         window.blit(rotated_arm, arm_rect.topleft)
 
-        player.update() #рух гравця
-    
-        #зіткнення гравця і ворогів
-        ...
+        player.update()
 
         if reload:
             now_time = timer()
@@ -253,21 +254,20 @@ while run:
                 ammo = 5
                 reload = False
 
+        for bullet in bullets:
+            for enemy in enemies:
+                if bullet.rect.colliderect(enemy.rect):
+                    bullets.remove(bullet)
+                    enemies.remove(enemy)
+                    score += 1
 
-
-
-
-        
-        #відрисовуємо спрайти
-        #player.draw(window) 
         enemies.draw(window)
         walls.draw(window)
         bullets.draw(window)
         enemies.update(lost)
         walls.update()
         bullets.update()
-        enemy1.update(lost)
-        enemy2.update(lost)
+
     if score == 1:
         finish = True
         window.blit(txt_win_game, (200,200))
