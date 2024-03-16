@@ -96,8 +96,8 @@ class Player(GameSprite):
 
     def fire(self):
         # Отримати позицію зброї відносно гравця
-        bullet_x = arm_rect.centerx
-        bullet_y = arm_rect.centery
+        bullet_x = arm_rect.centerx+10
+        bullet_y = arm_rect.centery-50
         bullet = Bullet(ammo1_img, 40, 45, bullet_x, bullet_y,  10, player.angle, player.dir)  
         bullets.add(bullet)   
     
@@ -128,6 +128,10 @@ class Bullet(GameSprite):
 
         self.angle = angle
         self.dir = dir
+        self.image = transform.rotate(self.image,degrees(-angle))
+        self.rect = self.image.get_rect(center = arm_rect.topright)
+        self.rect.x = x
+        self.rect.y = y  
 
     def update(self):
         self.rect.x += self.dir[0] * self.speed  
@@ -236,7 +240,7 @@ while run:
         player.dir = (dx/length, dy/length)
 
         rotated_arm = rotate(player.arm, degrees(-player.angle))
-        arm_rect = rotated_arm.get_rect(center=player.rect.center)
+        arm_rect = rotated_arm.get_rect(center=(player.rect.centerx+12,player.rect.centery+50))
 
         player.rect.topleft = (player.rect.topleft)
         window.blit(player.image, player.rect)
