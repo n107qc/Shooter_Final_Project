@@ -40,7 +40,7 @@ f = font.SysFont('Arial', 36)
 f2 = font.SysFont('Arial', 80)
 
 txt_lose_game = f2.render('Програв',True,(255,0,0))
-txt_win_game = f2.render('Вигрвав',True,(0,255,0))
+
 
 ammo = 5
 reload = False
@@ -98,7 +98,7 @@ class Player(GameSprite):
         # Отримати позицію зброї відносно гравця
         bullet_x = arm_rect.centerx
         bullet_y = arm_rect.centery
-        bullet = Bullet(ammo1_img, 15, 20, bullet_x, bullet_y,  10, player.angle, player.dir)  
+        bullet = Bullet(ammo1_img, 40, 45, bullet_x, bullet_y,  10, player.angle, player.dir)  
         bullets.add(bullet)   
     
      
@@ -268,9 +268,8 @@ while run:
         walls.update()
         bullets.update()
 
-    if score == 1:
+    if score == 2:
         finish = True
-        window.blit(txt_win_game, (200,200))
     if finish:
         result_text.draw(window) 
 
