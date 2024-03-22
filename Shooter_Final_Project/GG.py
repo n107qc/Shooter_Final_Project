@@ -93,6 +93,10 @@ class Player(GameSprite):
         for w in enemies:
             if sprite.collide_mask(self,w):
                 self.rect.x, self.rect.y = old_pos
+        
+        for w in bullets:
+            if sprite.collide_mask(self,w):
+                self.rect.x, self.rect.y = old_pos
 
     def fire(self):
         # Отримати позицію зброї відносно гравця
@@ -207,6 +211,7 @@ run = True
 finish = False
 clock = time.Clock()
 FPS = 60
+level = 1   
 
 # ігровий цикл
 while run:
@@ -265,12 +270,26 @@ while run:
                     enemies.remove(enemy)
                     score += 1
 
-        enemies.draw(window)
-        walls.draw(window)
-        bullets.draw(window)
-        enemies.update(lost)
-        walls.update()
-        bullets.update()
+        if player.rect.right > WIDTH: #якщо торкаємося правого краю вікна
+            if level == 1:
+                level = 2
+                player.rect.x = 0
+                walls = sprite.Group()
+                 #якщо були на першому рівні level = 2 # переходимо на 2-й рівень player.rect.x = 0 # гравця перемішаємо вліво walls = sprite.Group() # створюємо нові стіни walls.add ( Wall(250, 300, 20, 550) ) #тут треба вказати стіни для 2 рівня
+                walls. add ( Wall(250, 300, 20, 550) )
+                walls. add ( Wall(250, 300, 20, 550) )  
+
+                enemies = sprite.Group() # створюємо нових ворогів
+                enemies. add (Enemy (enemy1_img, width=200, height=189, x=450, у=225)) #тут треба вказати ворогів для 2 рівня
+                enemies. add (Enemy(enemy2_img, width=180, height=160, x=670, y=15))
+
+
+    enemies.draw(window)
+    walls.draw(window)
+    bullets.draw(window)
+    enemies.update(lost)
+    walls.update()
+    bullets.update()
 
     if score == 2:
         finish = True
