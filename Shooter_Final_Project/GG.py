@@ -243,35 +243,27 @@ while run:
                     reload = True
                     start_reload = timer()
 
-    
     window.blit(bg, (0, 0))
 
-    
     if not finish:
         mouse_pos = mouse.get_pos()
-
         dx = mouse_pos[0] - player.rect.centerx
         dy = mouse_pos[1] - player.rect.centery
-
         player.angle = atan2(dy, dx)
-        player.dir = (dx,dy)
+        player.dir = (dx, dy)
         length = hypot(*player.dir)
-        player.dir = (dx/length, dy/length)
-
+        player.dir = (dx / length, dy / length)
         rotated_arm = rotate(player.arm, degrees(-player.angle))
-        arm_rect = rotated_arm.get_rect(center=(player.rect.centerx+12,player.rect.centery+50))
-
-        player.rect.topleft = (player.rect.topleft)
+        arm_rect = rotated_arm.get_rect(center=(player.rect.centerx + 12, player.rect.centery + 50))
         window.blit(player.image, player.rect)
         window.blit(rotated_arm, arm_rect.topleft)
-
         player.update()
 
         if reload:
             now_time = timer()
             delta = now_time - start_reload
             if delta < 3:
-                txt_reload = f.render('WAIT', True, [150,150,200])
+                txt_reload = f.render('WAIT', True, [150, 150, 200])
                 window.blit(txt_reload, [150, 0])
             else:
                 ammo = 5
@@ -283,6 +275,12 @@ while run:
                     bullets.remove(bullet)
                     enemies.remove(enemy)
                     score += 1
+
+        # Перевірка зіткнення гравця з ворогом
+        for enemy in enemies:
+            if player.rect.colliderect(enemy.rect):
+                lost += 1
+                enemies.remove(enemy)
 
         if player.rect.right > WIDTH: #якщо торкаємося правого краю вікна
             if level == 1:
@@ -328,15 +326,23 @@ while run:
     walls.draw(window)
     bullets.draw(window)
 
-    txt_lose = f.render(f'Пропущено:{lost}', True, (255,255,255))
-    txt_score = f.render(f'Рахунок:{score}', True, (255,255,255))
-    window.blit(txt_lose, (0,50))
-    window.blit(txt_score, (0,0))
-    
-    if score == 0:
-        finish = True
-    if finish:
-        result_text.draw(window) 
+    if lost >= 1:
+            finish = True
+            result_text.draw(window)
+
+        # Перевірка перемоги
+    if score >= 10:
+            finish = True
+            win_text.draw(window)
+
+    txt_lose = f.render(f'Пропущено:{lost}', True, (255, 255, 255))
+    txt_score = f.render(f'Рахунок:{score}', True, (255, 255, 255))
+    window.blit(txt_lose, (0, 50))
+    window.blit(txt_score, (0, 0))
+
+    enemies.draw(window)
+    walls.draw(window)
+    bullets.draw(window)
 
     display.update()
     clock.tick(FPS)
