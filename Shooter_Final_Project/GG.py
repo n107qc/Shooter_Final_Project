@@ -270,15 +270,14 @@ while run:
                 reload = False
 
         for bullet in bullets:
-            for enemy in enemies:
-                if bullet.rect.colliderect(enemy.rect):
-                    bullets.remove(bullet)
-                    enemies.remove(enemy)
-                    score += 1
+            enemies_hit = sprite.spritecollide(bullet, enemies, True, sprite.collide_mask)
+            for enemy in enemies_hit:
+                bullets.remove(bullet)
+                score += 1
 
         # Перевірка зіткнення гравця з ворогом
         for enemy in enemies:
-            if player.rect.colliderect(enemy.rect):
+            if sprite.collide_mask(player,enemy):
                 lost += 1
                 enemies.remove(enemy)
 
@@ -340,9 +339,8 @@ while run:
     window.blit(txt_lose, (0, 50))
     window.blit(txt_score, (0, 0))
 
-    enemies.draw(window)
-    walls.draw(window)
+
     bullets.draw(window)
 
-    display.update()
+    display.update()    
     clock.tick(FPS)
