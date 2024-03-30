@@ -5,6 +5,7 @@ from pygame.image import load
 from random import randint
 from time import time as timer
 from math import atan2, degrees, hypot
+import sys
 
 font.init()
 mixer.init()
@@ -16,8 +17,11 @@ score = 0
 WIDTH, HEIGHT = 1520, 700
 
 # картинка фону
-bg= image.load("Img/фон4.jpg")
-bg2= image.load("Img/фон3.jpg")
+bg= image.load("Img/фон9.png")
+bg2= image.load("Img/фон7.png")
+bg3= image.load("Img/фон6.png")
+bg4= image.load("Img/фон8.png")
+
 
 #картинки для спрайтів
 player_img = image.load("Img/спрайт героя.png")
@@ -192,6 +196,8 @@ win_text = Text("Перемога", 650, 250, font_size = 100)
 #додавання фону
 bg = transform.scale(bg, (WIDTH, HEIGHT))
 bg2 = transform.scale(bg2, (WIDTH, HEIGHT))
+bg3 = transform.scale(bg3, (WIDTH, HEIGHT))
+bg4 = transform.scale(bg4, (WIDTH, HEIGHT))
 
 # створення спрайтів
 player = Player(player_img, width=300, height=200, x=0, y=415)
@@ -229,23 +235,56 @@ clock = time.Clock()
 FPS = 60
 level = 1   
 
+
+new_game_img = image.load("Img/new_game_image.png")
+exit_img = image.load("Img/exit_image.png")
+
+def draw_menu():
+    window.blit(new_game_img, (WIDTH//2 - new_game_img.get_width()//2, HEIGHT//2 - 100))
+    window.blit(exit_img, (WIDTH//2 - exit_img.get_width()//2, HEIGHT//2 + 100))
+    display.update()
+
+show_menu = True    
+
+bg_menu = image.load("Img/bg_menu.jpg")
+bg_menu = transform.scale(bg_menu, (WIDTH, HEIGHT)) 
+
 # ігровий цикл
 while run:
     for e in event.get():
         if e.type == QUIT:
-            run = False
-        elif e.type == KEYDOWN:
-            if e.key == K_SPACE:
-                if ammo > 0 and not reload:
-                    player.fire()
-                    ammo -= 1
-                elif ammo <= 0 and not reload:
-                    reload = True
-                    start_reload = timer()
+            sys.exit()
+        elif e.type == MOUSEBUTTONDOWN:
+            if show_menu:
+                mouse_pos = mouse.get_pos()
+                if new_game_img.get_rect(center=(WIDTH//2, HEIGHT//2 - 100)).collidepoint(mouse_pos):
+                    # Початок нової гри
+                    # Скидання всіх значень до початкових
+                    lost = 0
+                    score = 0
+                    ammo = 5
+                    reload = False
+                    start_reload = 0  # Скидання значення start_reload
+                    show_menu = False  # Закриття меню
+                elif exit_img.get_rect(center=(WIDTH//2, HEIGHT//2 + 100)).collidepoint(mouse_pos):
+                    sys.exit()  # Вихід з гри
+        elif e.type == KEYDOWN:  # Обробка натискання клавіші
+            if e.key == K_SPACE:  # Якщо натиснуто пробіл
+                if not show_menu:  # Перевірка, що гра не в меню
+                    if ammo > 0 and not reload:  # Перевірка, чи є боєприпаси та чи не відбувається перезавантаження
+                        player.fire()  # Виклик методу стрільби гравця
+                        ammo -= 1  # Зменшення кількості боєприпасів
+                    elif ammo <= 0 and not reload:  # Перевірка, що боєприпаси закінчилися та не відбувається перезавантаження
+                        reload = True  # Встановлення прапорця перезавантаження
+                        start_reload = timer()
 
     window.blit(bg, (0, 0))
-
-    if not finish:
+    
+    if show_menu:
+        # Відображення фону меню
+        window.blit(bg_menu, (0, 0))
+        draw_menu()
+    else:
         mouse_pos = mouse.get_pos()
         dx = mouse_pos[0] - player.rect.centerx
         dy = mouse_pos[1] - player.rect.centery
@@ -285,7 +324,7 @@ while run:
             if level == 1:
                 level = 2
                 player.rect.x = 0
-                bg=bg2
+                bg=bg3
                 walls = sprite.Group()
                  #якщо були на першому рівні level = 2 # переходимо на 2-й рівень player.rect.x = 0 # гравця перемішаємо вліво walls = sprite.Group() # створюємо нові стіни walls.add ( Wall(250, 300, 20, 550) ) #тут треба вказати стіни для 2 рівня
                 walls.add(Wall(250, 300, 20, 550))
@@ -303,6 +342,7 @@ while run:
         if player.rect.right > WIDTH: #якщо торкаємося правого краю вікна
             if level == 2:
                 level = 3
+                bg=bg2
                 player.rect.x = 0
                 walls = sprite.Group()
                  #якщо були на першому рівні level = 2 # переходимо на 2-й рівень player.rect.x = 0 # гравця перемішаємо вліво walls = sprite.Group() # створюємо нові стіни walls.add ( Wall(250, 300, 20, 550) ) #тут треба вказати стіни для 2 рівня
@@ -310,11 +350,38 @@ while run:
                 walls.add(Wall(300, 580, 20, 300))
                 walls.add(Wall(500, 0, 20, 550))
                 walls.add(Wall(700, 700, 20, 20))
-
+                walls.add(Wall(950, 0, 20, 530))
+                walls.add(Wall(720, 250, 15, 600))
+                walls.add(Wall(1300, 0, 20, 300))
+                walls.add(Wall(1300, 500, 20, 150))
 
                 enemies = sprite.Group() # створюємо нових ворогів
                 enemies.add (Enemy(enemy1_img, width=200, height=189, x=570, y=225)) #тут треба вказати ворогів для 2 рівня
+                enemies.add (Enemy(enemy2_img, width=180, height=160, x=1000, y=125)) #тут треба вказати ворогів для 2 рівня
+                enemies.add (Enemy(enemy3_img, width=150, height=130, x=750, y=625)) #тут треба вказати ворогів для 2 рівня
+                enemies.add (Enemy(enemy4_img, width=130, height=100, x=1370, y=428)) #тут треба вказати ворогів для 2 рівня
+        
+        if player.rect.right > WIDTH: #якщо торкаємося правого краю вікна
+            if level == 3:
+                level = 4
+                bg=bg4
+                player.rect.x = 0
+                walls = sprite.Group()
+                 #якщо були на першому рівні level = 2 # переходимо на 2-й рівень player.rect.x = 0 # гравця перемішаємо вліво walls = sprite.Group() # створюємо нові стіни walls.add ( Wall(250, 300, 20, 550) ) #тут треба вказати стіни для 2 рівня
+                walls.add(Wall(250, 300, 20, 550))
+                walls.add(Wall(430, 100, 20, 350))
+                walls.add(Wall(945, 150, 20, 380))
+                walls.add(Wall(680, 410, 20, 280))
+                walls.add(Wall(1360, 150, 20, 380))
 
+
+                enemies = sprite.Group() # створюємо нових ворогів
+                enemies.add(Enemy(enemy4_img, width=130, height=100, x=530, y=225)) #тут треба вказати ворогів для 2 рівня
+                enemies.add(Enemy(enemy3_img, width=150, height=130, x=700, y=15))
+                enemies.add(Enemy(enemy2_img, width=180, height=160, x=956, y=425))
+                enemies.add(Enemy(enemy3_img, width=150, height=130, x=1350, y=115))
+                enemies.add(Enemy(enemy4_img, width=130, height=100, x=1200, y=115))
+                enemies.add(Enemy(enemy1_img, width=200, height=189, x=270, y=115))
                 
 
 
@@ -330,7 +397,7 @@ while run:
             result_text.draw(window)
 
         # Перевірка перемоги
-    if score >= 10:
+    if score >= 16:
             finish = True
             win_text.draw(window)
 
